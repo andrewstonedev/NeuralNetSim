@@ -15,24 +15,85 @@ public class NeuralNetSimulator
 
 	int NUM_INTERNAL_LAYERS;
 
-	public List<Double> INPUT_VECTOR = new ArrayList<>();
+	NeuralNet neuralNet_;
+	public List<Double> inputVector_ = new ArrayList<>();
+	public List<List<Double>> edgeWeights_ = new ArrayList<>();
+	List<NeuralLayer> neuralLayers_ = new ArrayList<>();
 
-	public List<Neuron> INPUT_LAYER_NEURONS = new ArrayList<>();
+	public void CreateNeuralNet() throws FileNotFoundException
+	{
+		ListifyInputVector();
+		ListifyWeights();
+		GenerateLayers();
+		neuralNet_ = new NeuralNet(NUM_INTERNAL_LAYERS, inputVector_, neuralLayers_);
+	}
 
-	public List<Neuron> INTERNAL_LAYER_NEURONS = new ArrayList<>();
+	private void GenerateLayers()
+	{
+		// reusable list for creating neural layers
+		List<Neuron> _layerNeurons = new ArrayList<>();
 
+		// generate input layer
+		for (int neuronIdx = 0; neuronIdx < NUM_NEURONS_INPUT_LAYER; neuronIdx++) {
+			_layerNeurons.add(new Neuron(0, neuronIdx + 1));
+		}
+		neuralLayers_.add(new NeuralLayer(0, NeuralLayer.LayerType.INPUT, _layerNeurons));
 
-	public void ListifyInputVector() throws FileNotFoundException
+		// generate internal layers
+		NeuralLayer _layer;
+		List<List<Double>> _layerWeights;
+
+		for (int L = 0; L < NUM_INTERNAL_LAYERS; L++) {
+			_layerNeurons = new ArrayList<>();
+			for (int neuronIdx = 0; neuronIdx < NUM_NEURONS_INTERNAL_LAYER; neuronIdx++) {
+				_layerNeurons.add(new Neuron(L + 1, neuronIdx + 1));
+			}
+
+			// Neurons in 1st internal layer have degree-4 connectivity to input layer
+			_layerWeights = new ArrayList<>();
+			if (L == 0) {
+				for (int i = 0; i < 4; i++) {
+					_layerWeights.add(edgeWeights_.remove(0));
+				}
+			}
+			// Neurons in subsequent internal layers have degree-5 connectivity to previous internal layer
+			else {
+				for (int i = 0; i < 5; i++) {
+					_layerWeights.add(edgeWeights_.remove(0));
+				}
+			}
+
+			_layer = new NeuralLayer(L + 1, NeuralLayer.LayerType.INTERNAL, _layerNeurons);
+			_layer.setEdgeWeights(_layerWeights);
+			neuralLayers_.add(_layer);
+		}
+
+		// generate output layer
+
+		_layerNeurons = new ArrayList<>();
+		for (int neuronIdx = 0; neuronIdx < NUM_NEURONS_OUTPUT_LAYER; neuronIdx++) {
+			_layerNeurons.add(new Neuron(NUM_INTERNAL_LAYERS + 1, neuronIdx + 1));
+		}
+
+		// Neurons in output layer have degree-5 connectivity to last internal layer
+		// Output layer edge weights will be the remaining List<List<Doubles>> in edgeWeights_
+		_layerWeights = edgeWeights_;
+		_layer = new NeuralLayer(NUM_INTERNAL_LAYERS + 1, NeuralLayer.LayerType.OUTPUT, _layerNeurons);
+		_layer.setEdgeWeights(_layerWeights);
+		neuralLayers_.add(_layer);
+	}
+
+	private void ListifyInputVector() throws FileNotFoundException
 	{
 		Scanner _scanner = new Scanner(new File(INPUT_VECTOR_FILENAME));
 		_scanner.useDelimiter(",");
 
 		while (_scanner.hasNext()) {
-			INPUT_VECTOR.add(Double.parseDouble(_scanner.next().trim()));
+			inputVector_.add(Double.parseDouble(_scanner.next().trim()));
 		}
 	}
 
-	public void ListifyNeurons() throws FileNotFoundException
+	private void ListifyWeights() throws FileNotFoundException
 	{
 		Scanner _lineScanner = new Scanner(new File(WEIGHT_FILENAME));
 		_lineScanner.useDelimiter("\n");
@@ -43,69 +104,29 @@ public class NeuralNetSimulator
 		String _token;
 		double _weight;
 
-		int neuron_index = 1;
-		int layer_index = 0;
-
 		while (_lineScanner.hasNext()) {
 			_line = _lineScanner.next();
-			ArrayList<Double> neuronWeights = new ArrayList<>();
-
 			_tokenScanner = new Scanner(_line).useDelimiter(",");
 
+			List<Double> _edgeWeights = new ArrayList<>();
 
 			while (_tokenScanner.hasNext()) {
 				_token = _tokenScanner.next().trim();
 				if (_token.equals("0")) {
-					neuronWeights.add(0.0);
+					_edgeWeights.add(0.0);
 				} else {
 					_weight = Double.parseDouble(_token);
-					neuronWeights.add(_weight);
+					_edgeWeights.add(_weight);
 				}
 			}
-
-			if (layer_index == 0) {
-				INPUT_LAYER_NEURONS.add(new Neuron(layer_index, neuron_index, neuronWeights));
-				neuron_index++;
-				if (neuron_index > 4) {
-					layer_index++;
-					neuron_index = 1;
-				}
-			} else {
-
-				INTERNAL_LAYER_NEURONS.add(new Neuron(layer_index, neuron_index, neuronWeights));
-
-				neuron_index++;
-				if (neuron_index > 5) {
-					layer_index++;
-					neuron_index = 1;
-				}
-			}
-
-		}
-	}
-	
-
-	public void PrintInternalNeurons()
-	{
-		for (var w : INTERNAL_LAYER_NEURONS) {
-			System.out.println("Layer-" + w.LAYER_INDEX + ", Neuron-" + w.NEURON_INDEX);
-			System.out.println(w.WEIGHTS_LIST);
-			System.out.println("------------------------");
+			edgeWeights_.add(_edgeWeights);
 		}
 	}
 
-	public void PrintInputLayer()
-	{
-		for (var i : INPUT_LAYER_NEURONS) {
-			System.out.println("Layer-" + i.LAYER_INDEX + ", Neuron-" + i.NEURON_INDEX);
-			System.out.println(i.WEIGHTS_LIST);
-			System.out.println("------------------------");
-		}
-	}
 
-	public void PrintInputVectorList()
+	public void PrintInputVector()
 	{
-		for (var i : INPUT_VECTOR) {
+		for (var i : inputVector_) {
 			System.out.print(i + "\t");
 		}
 		System.out.println();

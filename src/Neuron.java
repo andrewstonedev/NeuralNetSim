@@ -11,35 +11,30 @@ public class Neuron implements Runnable
 
 	CyclicBarrier cyclicBarrier;
 
-	int LAYER_INDEX;
-	int NEURON_INDEX;
+	int layerLvl;
+	int ID;
 
-	List<Double> INPUT_VALUES;
-	List<Double> WEIGHTS_LIST;
+	List<Double> inputValues_;
+	List<Double> edgeWeights_;
 
 	double WEIGHTED_SUM;
 	private int delay_ms;
 
-	public Neuron(int LAYER_INDEX, int NEURON_INDEX, List<Double> WEIGHTS_LIST)
-	{
-		this.LAYER_INDEX = LAYER_INDEX;
-		this.NEURON_INDEX = NEURON_INDEX;
-		this.WEIGHTS_LIST = WEIGHTS_LIST;
+	public Neuron(int layerLevel, int neuronID){
+		this.layerLvl = layerLevel;
+		this.ID = neuronID;
 		this.delay_ms = 5 + random.nextInt(15);
 	}
-
 
 	// Neuron::Run()
 	@Override public void run()
 	{
 		double sum = 0;
-		for (int i = 0; i < INPUT_VALUES.size(); i++) {
-			sum += INPUT_VALUES.get(i) * WEIGHTS_LIST.get(i);
+		for (int i = 0; i < inputValues_.size(); i++) {
+			sum += inputValues_.get(i) * edgeWeights_.get(i);
 
 			if (LOG_INFO) {
-				System.out.println("Layer/Index: " + this.LAYER_INDEX + "/" + this.NEURON_INDEX + " \n\t" + INPUT_VALUES.get(i) + " * " + WEIGHTS_LIST.get(i) + " = " + INPUT_VALUES.get(i) * WEIGHTS_LIST.get(i));
-				// System.out.println("\t" + INPUT_VALUES.get(i) + " * " + WEIGHTS_LIST.get(i) + " = " + INPUT_VALUES.get(i) * WEIGHTS_LIST.get(i));
-
+				System.out.println("Layer/Neuron: " + this.layerLvl + "/" + this.ID + " \n\t" + inputValues_.get(i) + " * " + edgeWeights_.get(i) + " = " + inputValues_.get(i) * edgeWeights_.get(i));
 			}
 
 		}
