@@ -69,7 +69,6 @@ public class NeuralNetSimulator
 		}
 
 		// generate output layer
-
 		_layerNeurons = new ArrayList<>();
 		for (int neuronIdx = 0; neuronIdx < NUM_NEURONS_OUTPUT_LAYER; neuronIdx++) {
 			_layerNeurons.add(new Neuron(NUM_INTERNAL_LAYERS + 1, neuronIdx + 1));
@@ -123,7 +122,6 @@ public class NeuralNetSimulator
 		}
 	}
 
-
 	public void PrintInputVector()
 	{
 		for (var i : inputVector_) {
@@ -131,4 +129,10 @@ public class NeuralNetSimulator
 		}
 		System.out.println();
 	}
+
+	public void RunSimulation()
+	{
+		neuralNet_.run();
+	}
+
 }

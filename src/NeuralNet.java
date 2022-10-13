@@ -9,23 +9,29 @@ public class NeuralNet implements Runnable
 	List<Double> inputVector_;
 	List<NeuralLayer> neuralLayers_;
 
-	CyclicBarrier cyclicBarrier = new CyclicBarrier(numberOfLayers_);
+	CyclicBarrier cyclicBarrier;
 
 	public NeuralNet(int numberOfInternalLayers, List<Double> inputVector, List<NeuralLayer> neuralLayers)
 	{
 		this.numberOfLayers_ = numberOfInternalLayers + 2;
 		this.inputVector_ = inputVector;
 		this.neuralLayers_ = neuralLayers;
+		cyclicBarrier = new CyclicBarrier(this.numberOfLayers_);
 	}
+
 
 	@Override public void run()
 	{
 		neuralLayers_.get(0).inputValues_ = this.inputVector_;
-		neuralLayers_.get(0).run();
 
-		for (var _layer : neuralLayers_) {
-			_layer.cyclicBarrier = this.cyclicBarrier;
+		for (int L = 0; L < neuralLayers_.size(); L++) {
+			// neuralLayers_.get(L).cyclicBarrier = this.cyclicBarrier;
+			if (neuralLayers_.get(L).layerType_ != NeuralLayer.LayerType.OUTPUT) {
+				neuralLayers_.get(L).nextLayerRef_ = neuralLayers_.get(L + 1);
+			}
 		}
+
+		neuralLayers_.get(0).run();
 
 	}
 }

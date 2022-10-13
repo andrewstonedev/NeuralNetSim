@@ -1,19 +1,25 @@
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
 import java.util.concurrent.CyclicBarrier;
+import java.util.stream.Collectors;
 
 public class NeuralLayer implements Runnable
 {
 	boolean LOG_INFO = false;
 	private Random random = new Random();
 
-	private int layerLvl_;
-	List<Neuron> neurons_;
+	int layerLvl_;
+	private List<Neuron> neurons_;
 	List<Double> inputValues_;
 	private List<List<Double>> edgeWeights_;
 	CyclicBarrier cyclicBarrier;
 	LayerType layerType_;
+	NeuralLayer nextLayerRef_;
+
+	// double computedSums_[];
+	List<Double> computedSums_;
 
 	public enum LayerType
 	{INPUT, INTERNAL, OUTPUT}
@@ -24,8 +30,39 @@ public class NeuralLayer implements Runnable
 		this.layerLvl_ = layerLevel;
 		this.layerType_ = layerType;
 		this.neurons_ = neurons;
+		// this.computedSums_ = new double[this.neurons_.size()];
+		this.computedSums_ = new ArrayList<>(this.neurons_.size());
+		for (int i = 0; i < this.neurons_.size(); i++) {
+			computedSums_.add(i, 0.0);
+		}
+		this.cyclicBarrier = new CyclicBarrier(neurons_.size(), new Runnable()
+		{
+			@Override public void run()
+			{
+				System.out.print(Thread.currentThread().getName() + " Layer-" + layerLevel + " Sums: ");
+				for (var sum : computedSums_) {
+					System.out.print(sum + ", ");
+				}
+				System.out.println();
+				if (layerType != LayerType.OUTPUT) {
+					// nextLayerRef_.inputValues_ = Arrays.stream(computedSums_).boxed().collect(Collectors.toList());
+					nextLayerRef_.inputValues_ = computedSums_;
+					nextLayerRef_.run();
+				} else {
+					System.out.println("--------------");
+					System.out.println("\tIndex of output layer neuron with largest value: ");
+					var maxOutput = computedSums_.stream().max(Double::compareTo).get();
+					System.out.print("\t\tNeuronID "+computedSums_.indexOf(maxOutput) + ": value " + computedSums_.stream().max(Double::compareTo).get());
+					System.out.println("\n--------------");
+				}
+			}
+		});
 
-		cyclicBarrier = new CyclicBarrier(neurons_.size());
+		// Provide Neural layer ref to neurons which belong to this layer
+		// Used for setting Neuron::weightedSum_ to NeuralLayer::computedSums_
+		for (var neuron : neurons_) {
+			neuron.setLayerRef_(this);
+		}
 
 		if (LOG_INFO) {
 			System.out.println("LAYER-" + this.layerLvl_ + " created");
@@ -33,16 +70,26 @@ public class NeuralLayer implements Runnable
 		}
 	}
 
+	// double[] getComputedSums()
+	// {
+	// 	return this.computedSums_;
+	// }
+	List<Double> getComputedSums()
+	{
+		return this.computedSums_;
+	}
+
 	public void setEdgeWeights(List<List<Double>> edgeWeights)
 	{
 		this.edgeWeights_ = edgeWeights;
+		TransposeEdgeWeights();
+
 		if (LOG_INFO) {
 			System.out.println("LAYER-" + this.layerLvl_ + " edge weights:");
 			for (var weights : this.edgeWeights_) {
 				System.out.println("\t" + weights);
 			}
 		}
-		TransposeEdgeWeights();
 
 		// set weights of neurons in layer
 		for (int i = 0; i < neurons_.size(); i++) {
@@ -74,14 +121,31 @@ public class NeuralLayer implements Runnable
 		this.edgeWeights_ = edgeWeights_transposed;
 	}
 
+	protected void setNextLayerRef(NeuralLayer layerRef)
+	{
+		this.nextLayerRef_ = layerRef;
+	}
+
+
+	// protected void setComputedSum(int neuronID, double computedSum)
+	// {
+	// 	this.computedSums_[neuronID - 1] = computedSum;
+	// }
+	protected void setComputedSum(int neuronID, double computedSum)
+	{
+		this.computedSums_.set(neuronID - 1, computedSum);
+	}
 
 	@Override public void run()
 	{
 		String threadName = Thread.currentThread().getName();
+		System.out.print("NeuralLayer.run()\t");
+		System.out.println("threadName = " + threadName);
 
-		if (this.layerType_==LayerType.INPUT)
-		{
-
+		if (this.layerType_ == LayerType.INPUT) {
+			for (var neuron : neurons_) {
+				neuron.edgeWeights_ = new ArrayList<>(Arrays.asList(1.0, 1.0, 1.0, 1.0, 1.0));
+			}
 		}
 
 		for (Neuron neuron : neurons_) {
