@@ -7,10 +7,5 @@ public class Main
 		NeuralNetSimulator NNS = new NeuralNetSimulator();
 		NNS.CreateNeuralNet();
 		NNS.RunSimulation();
-<<<<<<< HEAD
-=======
-
-
->>>>>>> main
 	}
 }
