@@ -18,15 +18,27 @@ public class NeuralNet implements Runnable
 		cyclicBarrier = new CyclicBarrier(this.numberOfLayers_);
 	}
 
+
 	@Override public void run()
 	{
 		neuralLayers_.get(0).inputValues_ = this.inputVector_;
 
 		for (int L = 0; L < neuralLayers_.size(); L++) {
+<<<<<<< HEAD
 			if (neuralLayers_.get(L).layerType_ != NeuralLayer.LayerType.OUTPUT) {
 				neuralLayers_.get(L).setNextLayerRef(neuralLayers_.get(L + 1));
 			}
 		}
 		neuralLayers_.get(0).run();
+=======
+			// neuralLayers_.get(L).cyclicBarrier = this.cyclicBarrier;
+			if (neuralLayers_.get(L).layerType_ != NeuralLayer.LayerType.OUTPUT) {
+				neuralLayers_.get(L).nextLayerRef_ = neuralLayers_.get(L + 1);
+			}
+		}
+
+		neuralLayers_.get(0).run();
+
+>>>>>>> main
 	}
 }
